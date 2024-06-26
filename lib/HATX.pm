@@ -66,6 +66,20 @@ sub map {
     return $o;
 }
 
+=head2 to_href
+    $fn->($val) -> ($key, $val)
+    $fn is a FUNCTIONREF that takes a single value and returns two values
+=cut
+sub to_href {
+    my ($o,$fn) = @_;
+    $o->map($fn);
+    carp 'HATX/to_href: Not an array' unless ref($o->{A}) eq 'ARRAY';
+    $o->{H} = {@{$o->{A}}};
+    $o->{A} = undef;
+
+    return $o;
+}
+
 1;
 __END__
 
