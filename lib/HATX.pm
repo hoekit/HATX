@@ -1,8 +1,37 @@
 package HATX;
 
-use strict;
-use 5.008_005;
-our $VERSION = '0.01';
+use strict; use warnings; use utf8; use 5.10.0;
+use Exporter 'import';
+use Carp;
+use Clone qw/clone/;
+
+our $VERSION = '0.0.1';
+our @EXPORT_OK = qw/hatx/;
+
+# Create from existing object without clobbering
+sub from_obj {
+    my ($o, $obj) = @_;
+
+    $o->{H} = clone($obj) if ref($obj) eq 'HASH';
+    $o->{A} = clone($obj) if ref($obj) eq 'ARRAY';
+}
+
+# Default constructor
+sub new {
+    my $class = shift;
+    my $self = {H => undef, A => undef };
+    bless $self, $class;
+
+    my $obj = shift;
+    $self->from_obj($obj) if defined $obj;
+
+    return $self;
+}
+
+# Helper to quickly create a hatx object
+sub hatx {
+    return HATX->new(@_);
+}
 
 1;
 __END__
@@ -11,11 +40,22 @@ __END__
 
 =head1 NAME
 
-HATX - Blah blah blah
+HATX - Hash and Array Transformation
 
 =head1 SYNOPSIS
 
-  use HATX;
+  use HATX qw/hatx/;
+
+  my $files = [
+    '01 journal.html',
+    '02 journal(1).html',
+    '03 journal(2).html',
+    '04 projmgmt.html',
+    '05 projmgmt(1).html',
+  ];
+
+  # Clones $files object
+  hatx($files);
 
 =head1 DESCRIPTION
 
