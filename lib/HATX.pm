@@ -35,6 +35,13 @@ sub hatx {
     return HATX->new(@_);
 }
 
+# Converts object into underlying href or aref
+sub to_obj {
+    my $o = shift;
+    return clone($o->{H}) if defined $o->{H};
+    return clone($o->{A}) if defined $o->{A};
+}
+
 # Implement map that applies to both href and aref
 sub map {
     my $o = shift;
