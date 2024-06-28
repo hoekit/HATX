@@ -67,6 +67,9 @@ sub map {
 }
 
 =head2 to_href
+
+Convert internal aref to href using the given function.
+
     $fn->($val) -> ($key, $val)
     $fn is a FUNCTIONREF that takes a single value and returns two values
 =cut
@@ -76,6 +79,33 @@ sub to_href {
     carp 'HATX/to_href: Not an array' unless ref($o->{A}) eq 'ARRAY';
     $o->{H} = {@{$o->{A}}};
     $o->{A} = undef;
+
+    return $o;
+}
+
+=head2 apply
+
+Apply the given function to each item in the href/aref. Arguments can be
+provided to store results of the function application e.g. finding the
+max value.
+
+    fn($k,$v,@args) -> ()
+    fn($v,@args)    -> ()
+
+=cut
+sub apply {
+    my ($o,$fn,@args) = @_;
+
+    if (defined($o->{H})) {
+        foreach my $k (keys %{$o->{H}}) {
+            $fn->($k,$o->{H}{$k},@args);
+        }
+    }
+    if (defined($o->{A})) {
+        foreach my $v (@{$o->{A}}) {
+            $fn->($v,@args);
+        }
+    }
 
     return $o;
 }
@@ -93,18 +123,56 @@ HATX - Hash and Array Transformation
 
   use HATX qw/hatx/;
 
+  # Multiple versions of journal.html and projmgmt.html
   my $files = [
-    '01 journal.html',
-    '02 journal(1).html',
-    '03 journal(2).html',
-    '04 projmgmt.html',
-    '05 projmgmt(1).html',
+    'journal-v1.0.tar.gz  1201',
+    'journal-v1.1.tar.gz  1999',
+    'journal-v1.2.tar.gz  3100',
+    'projmgmt-v0.1.tar.gz  250',
+    'projmgmt-v0.2.tar.gz  350'
   ];
 
-  # Clones $files object
-  hatx($files)
-  ->map(sub { [split / /, $_[0]] })
+  # hatx($obj) clones $obj; no clobbering
+  my $h = hatx($files)
+    # Internal object becomes equivalent to:
+    # [ 'journal-v1.0.tar.gz  1201',
+    #   'journal-v1.1.tar.gz  1999',
+    #   'journal-v1.2.tar.gz  3100',
+    #   'projmgmt-v0.1.tar.gz  250',
+    #   'projmgmt-v0.2.tar.gz  350' ]
+
+   # Extract components: file, version, bytes
+   ->map(sub {
+      $_[0] =~ /(journal|projmgmt)-v(.+).tar.gz\s+(\d+)/;
+      return [$1, $2, $3];      # e.g. ['journal', '1.0', 1201]
+    })
+    # Internal object becomes equivalent to:
+    # [ ['journal', '1.0', 1201]
+    #   ['journal', '1.1', 1999]
+    #   ['journal', '1.2', 3100]
+    #   ['projmgmt', '0.1', 250]
+    #   ['projmgmt', '0.2', 350] ]
+
+  # Accumulate file count and file sizes
+  ->apply(sub {
+      my ($v, $res) = @_;
+      $res->{count}++;
+      $res->{bytes} += $v->[2];
+    }, my $stats = { count => 0, bytes => 0 })
+    # Internal object unchanged
+    # The $stats variable becomes { count => 5, bytes => 6900 }
+
+  # Determine the max version of each file
+  ->apply(sub {
+      my ($v, $res) = @_;
+      my ($file, $ver, $size) = @$v;
+      if ($ver gt $res->{$file}) { $res->{$file} = $ver }
+    }, my $max = { journal => '0.0', projmgmt => '0.0' })
+    # Internal object unchanged
+    # $max variable becomes { journal => '1.2', projmgmt => '0.2' }
+
   ;
+  #
 
 =head1 DESCRIPTION
 
