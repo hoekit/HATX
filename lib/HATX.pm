@@ -8,6 +8,82 @@ use Clone qw/clone/;
 our $VERSION = '0.0.1';
 our @EXPORT_OK = qw/hatx/;
 
+=head1 NAME
+
+HATX - A fluent interface for Hash and Array Transformations
+
+=cut
+=head1 SYNOPSIS
+
+  use HATX qw/hatx/;
+
+  # Multiple versions of journal.html and projmgmt.html
+  my $files = [
+    'journal-v1.0.tar.gz  1201',
+    'journal-v1.1.tar.gz  1999',
+    'journal-v1.2.tar.gz  3100',
+    'projmgmt-v0.1.tar.gz  250',
+    'projmgmt-v0.2.tar.gz  350'
+  ];
+
+  # Declare a helper object
+  my $max = { journal => '0.0', projmgmt => '0.0' };
+
+  # hatx($obj) clones $obj; no clobbering
+  my $h = hatx($files)
+    # Internal object becomes equivalent to:
+    # [ 'journal-v1.0.tar.gz  1201',
+    #   'journal-v1.1.tar.gz  1999',
+    #   'journal-v1.2.tar.gz  3100',
+    #   'projmgmt-v0.1.tar.gz  250',
+    #   'projmgmt-v0.2.tar.gz  350' ]
+
+   # Extract components: file, version, bytes
+   ->map(sub {
+      $_[0] =~ /(journal|projmgmt)-v(.+).tar.gz\s+(\d+)/;
+      return [$1, $2, $3];      # e.g. ['journal', '1.0', 1201]
+    })
+    # Internal object becomes equivalent to:
+    # [ ['journal', '1.0', 1201]
+    #   ['journal', '1.1', 1999]
+    #   ['journal', '1.2', 3100]
+    #   ['projmgmt', '0.1', 250]
+    #   ['projmgmt', '0.2', 350] ]
+
+  # Accumulate file count and file sizes
+  ->apply(sub {
+      my ($v, $res) = @_;
+      $res->{count}++;
+      $res->{bytes} += $v->[2];
+    }, my $stats = { count => 0, bytes => 0 })
+    # Internal object unchanged
+    # The $stats variable becomes { count => 5, bytes => 6900 }
+
+  # Determine the max version of each file, store into $max
+  ->apply(sub {
+      my ($v, $res) = @_;
+      my ($file, $ver, $size) = @$v;
+      if ($ver gt $res->{$file}) { $res->{$file} = $ver }
+    }, $max)
+    # Internal object unchanged
+    # $max variable becomes { journal => '1.2', projmgmt => '0.2' }
+
+  # Keep only the max version
+  ->grep(sub {
+      my ($v, $res) = @_;
+      my ($file, $ver, $size) = @$v;
+      return $ver eq $res->{$file};
+    }, $max)
+    # Internal object reduced to:
+    #   ['journal', '1.2', 3100]
+    #   ['projmgmt', '0.2', 350] ]
+  ;
+
+=cut
+=head1 METHODS
+=cut
+
+
 # Create from existing object without clobbering
 sub from_obj {
     my ($o, $obj) = @_;
@@ -168,82 +244,6 @@ sub apply {
 __END__
 
 =encoding utf-8
-
-=head1 NAME
-
-HATX - Hash and Array Transformation
-
-=head1 SYNOPSIS
-
-  use HATX qw/hatx/;
-
-  # Multiple versions of journal.html and projmgmt.html
-  my $files = [
-    'journal-v1.0.tar.gz  1201',
-    'journal-v1.1.tar.gz  1999',
-    'journal-v1.2.tar.gz  3100',
-    'projmgmt-v0.1.tar.gz  250',
-    'projmgmt-v0.2.tar.gz  350'
-  ];
-
-  # Declare a helper object
-  my $max = { journal => '0.0', projmgmt => '0.0' };
-
-  # hatx($obj) clones $obj; no clobbering
-  my $h = hatx($files)
-    # Internal object becomes equivalent to:
-    # [ 'journal-v1.0.tar.gz  1201',
-    #   'journal-v1.1.tar.gz  1999',
-    #   'journal-v1.2.tar.gz  3100',
-    #   'projmgmt-v0.1.tar.gz  250',
-    #   'projmgmt-v0.2.tar.gz  350' ]
-
-   # Extract components: file, version, bytes
-   ->map(sub {
-      $_[0] =~ /(journal|projmgmt)-v(.+).tar.gz\s+(\d+)/;
-      return [$1, $2, $3];      # e.g. ['journal', '1.0', 1201]
-    })
-    # Internal object becomes equivalent to:
-    # [ ['journal', '1.0', 1201]
-    #   ['journal', '1.1', 1999]
-    #   ['journal', '1.2', 3100]
-    #   ['projmgmt', '0.1', 250]
-    #   ['projmgmt', '0.2', 350] ]
-
-  # Accumulate file count and file sizes
-  ->apply(sub {
-      my ($v, $res) = @_;
-      $res->{count}++;
-      $res->{bytes} += $v->[2];
-    }, my $stats = { count => 0, bytes => 0 })
-    # Internal object unchanged
-    # The $stats variable becomes { count => 5, bytes => 6900 }
-
-  # Determine the max version of each file, store into $max
-  ->apply(sub {
-      my ($v, $res) = @_;
-      my ($file, $ver, $size) = @$v;
-      if ($ver gt $res->{$file}) { $res->{$file} = $ver }
-    }, $max)
-    # Internal object unchanged
-    # $max variable becomes { journal => '1.2', projmgmt => '0.2' }
-
-  # Keep only the max version
-  ->grep(sub {
-      my ($v, $res) = @_;
-      my ($file, $ver, $size) = @$v;
-      return $ver eq $res->{$file};
-    }, $max)
-    # Internal object reduced to:
-    #   ['journal', '1.2', 3100]
-    #   ['projmgmt', '0.2', 350] ]
-
-  ;
-  #
-
-=head1 DESCRIPTION
-
-HATX - a fluent interface for manipulating hashrefs and arrayrefs
 
 =head1 AUTHOR
 
