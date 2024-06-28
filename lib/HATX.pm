@@ -42,7 +42,18 @@ sub to_obj {
     return clone($o->{A}) if defined $o->{A};
 }
 
-# Implement map that applies to both href and aref
+=head2 map
+
+Apply the given function to each item in the href/aref.
+
+The given function has the following signature:
+
+    fn($k,$v) -> ($k,$v)    # Applied to href
+    fn($v)    -> ($v)       # Applied to aref
+
+The internal href/aref IS modified.
+
+=cut
 sub map {
     my $o = shift;
     my $fn = shift;     # H: fn->($key,$val)
@@ -59,6 +70,47 @@ sub map {
         my $new_A = [];
         foreach my $v (@{$o->{A}}) {
             push @$new_A, $fn->($v);
+        }
+        $o->{A} = $new_A;
+    }
+
+    return $o;
+}
+
+=head2 grep
+
+Apply the given function to each item in the href/aref.
+
+The given function has the following signature:
+
+    fn->($k,$v[,@args]) -> BOOLEAN     # Applied to hashref
+    fn->($v[,@args])    -> BOOLEAN     # Applied to arrayref
+
+    WHERE
+      fn     A function reference that returns a boolean value
+      $k,$v  The key-value pair of a hash
+      $v     An item of an array
+      @args  An optional list of user variables
+
+Items where the fn returns a True value are kept.
+
+=cut
+sub grep {
+    my $o = shift;
+    my $fn = shift;     # H: fn->($key,$val) -> BOOL
+                        # A: fn->($val)      -> BOOL
+    my @args = @_;
+
+    if (defined($o->{H})) {
+        my $new_H = {};
+        foreach my $k (keys %{$o->{H}}) {
+            delete $o->{H}{$k} unless $fn->($k,$o->{H}{$k},@args);
+        }
+    }
+    if (defined($o->{A})) {
+        my $new_A = [];
+        foreach my $v (@{$o->{A}}) {
+            push @$new_A, $v if $fn->($v,@args);
         }
         $o->{A} = $new_A;
     }
@@ -88,6 +140,8 @@ sub to_href {
 Apply the given function to each item in the href/aref. Arguments can be
 provided to store results of the function application e.g. finding the
 max value.
+
+The internal href/aref is not modified.
 
     fn($k,$v,@args) -> ()
     fn($v,@args)    -> ()
@@ -132,6 +186,9 @@ HATX - Hash and Array Transformation
     'projmgmt-v0.2.tar.gz  350'
   ];
 
+  # Declare a helper object
+  my $max = { journal => '0.0', projmgmt => '0.0' };
+
   # hatx($obj) clones $obj; no clobbering
   my $h = hatx($files)
     # Internal object becomes equivalent to:
@@ -162,21 +219,31 @@ HATX - Hash and Array Transformation
     # Internal object unchanged
     # The $stats variable becomes { count => 5, bytes => 6900 }
 
-  # Determine the max version of each file
+  # Determine the max version of each file, store into $max
   ->apply(sub {
       my ($v, $res) = @_;
       my ($file, $ver, $size) = @$v;
       if ($ver gt $res->{$file}) { $res->{$file} = $ver }
-    }, my $max = { journal => '0.0', projmgmt => '0.0' })
+    }, $max)
     # Internal object unchanged
     # $max variable becomes { journal => '1.2', projmgmt => '0.2' }
+
+  # Keep only the max version
+  ->grep(sub {
+      my ($v, $res) = @_;
+      my ($file, $ver, $size) = @$v;
+      return $ver eq $res->{$file};
+    }, $max)
+    # Internal object reduced to:
+    #   ['journal', '1.2', 3100]
+    #   ['projmgmt', '0.2', 350] ]
 
   ;
   #
 
 =head1 DESCRIPTION
 
-HATX is
+HATX - a fluent interface for manipulating hashrefs and arrayrefs
 
 =head1 AUTHOR
 
