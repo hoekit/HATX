@@ -48,6 +48,17 @@
       }
    },
    "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/hoekit/HATX/issues"
+      },
+      "homepage" : "https://github.com/hoekit/HATX",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/hoekit/HATX.git",
+         "web" : "https://github.com/hoekit/HATX"
+      }
+   },
    "version" : "0.0.1",
    "x_generated_by_perl" : "v5.28.2",
    "x_serialization_backend" : "Cpanel::JSON::XS version 4.17",
