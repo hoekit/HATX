@@ -134,10 +134,12 @@ sub map {
     my $o = shift;
     my $fn = shift;     # H: fn->($key,$val)
                         # A: fn->($val)
+    my @args = @_;
+
     if (defined($o->{H})) {
         my $new_H = {};
         foreach my $k (keys %{$o->{H}}) {
-            my ($k2,$v2) = $fn->($k,$o->{H}{$k});
+            my ($k2,$v2) = $fn->($k,$o->{H}{$k},@args);
             $new_H->{$k2} = $v2;
         }
         $o->{H} = $new_H;
@@ -145,7 +147,7 @@ sub map {
     if (defined($o->{A})) {
         my $new_A = [];
         foreach my $v (@{$o->{A}}) {
-            push @$new_A, $fn->($v);
+            push @$new_A, $fn->($v,@args);
         }
         $o->{A} = $new_A;
     }
