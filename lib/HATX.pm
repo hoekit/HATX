@@ -196,6 +196,43 @@ sub grep {
     return $o;
 }
 
+=head2 sort( $fn )
+
+DESCRIPTION
+
+    Sorts contents of arrayref. Hashrefs are unmodified.
+
+ARGUMENTS
+
+    $fn - A function reference with prototype ($$) See https://perldoc.perl.org/functions/sort.
+
+EXAMPLES
+
+    # Sort descending alphabetically
+    hatx($aref)->sort(sub ($$) { $_[1] cmp $_[0] });
+
+    # Sort ascending numerically
+    hatx($aref)->sort(sub ($$) { $_[0] <=> $_[1] });
+
+    # Sort descending numerically
+    hatx($aref)->sort(sub ($$) { $_[1] <=> $_[0] });
+
+=cut
+sub sort ($&) {
+    my $o = shift;
+    my $fn = shift;     # A: $fn is a BLOCK
+
+    if (defined($o->{H})) {
+        # do nothing
+    }
+    if (defined($o->{A})) {
+        $o->{A} = defined $fn ? [ sort $fn @{$o->{A}} ]
+                              : [ sort @{$o->{A}} ];
+    }
+
+    return $o;
+}
+
 =head2 to_href
 
 Convert internal aref to href using the given function.
