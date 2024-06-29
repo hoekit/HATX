@@ -75,7 +75,7 @@ HATX - A fluent interface for Hash and Array Transformations
       return $ver eq $res->{$file};
     }, $max)
     # Internal object reduced to:
-    #   ['journal', '1.2', 3100]
+    # [ ['journal', '1.2', 3100]
     #   ['projmgmt', '0.2', 350] ]
   ;
 
@@ -204,7 +204,7 @@ DESCRIPTION
 
 ARGUMENTS
 
-    $fn - A function reference with prototype ($$) See https://perldoc.perl.org/functions/sort.
+    $fn - A function reference with prototype ($$). See https://perldoc.perl.org/functions/sort.
 
 EXAMPLES
 
@@ -246,6 +246,44 @@ sub to_href {
     carp 'HATX/to_href: Not an array' unless ref($o->{A}) eq 'ARRAY';
     $o->{H} = {@{$o->{A}}};
     $o->{A} = undef;
+
+    return $o;
+}
+
+=head2 to_aref( $fn [,@args] )
+
+DESCRIPTION
+
+    Convert internal hashref to an arrayref.
+
+ARGUMENTS
+
+    $fn - A user-provided function reference with signature:
+
+      $fn->($hkey, $hval [,@args]) return ($val)
+
+      WHERE
+        $hkey   Key of source hashref pair
+        $hval   Value of source hashref pair
+        @args   Optional user variables
+        $val    An element of the target arrayref
+
+    @args - Optional arguments that are passed through to $fn
+
+=cut
+sub to_aref {
+    my ($o,$fn,@args) = @_;
+
+    if (defined($o->{H})) {
+        my $new_A = [];
+        foreach my $k (keys %{$o->{H}}) {
+            push @$new_A, $fn->($k,$o->{H}{$k},@args);
+        }
+        $o->{A} = $new_A;
+        $o->{H} = undef;
+    } else {
+        croak 'HATX/to_aref: No hashref to transform.';
+    }
 
     return $o;
 }
