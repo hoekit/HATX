@@ -64,7 +64,7 @@ HATX - A fluent interface for Hash and Array Transformations
         return $ver eq $res->{$file};
       }, $max)
       # Internal object reduced to:
-      #   ['journal', '1.2', 3100]
+      # [ ['journal', '1.2', 3100]
       #   ['projmgmt', '0.2', 350] ]
     ;
 
@@ -98,12 +98,53 @@ The given function has the following signature:
 
 Items where the fn returns a True value are kept.
 
+## sort( $fn )
+
+DESCRIPTION
+
+    Sorts contents of arrayref. Hashrefs are unmodified.
+
+ARGUMENTS
+
+    $fn - A function reference with prototype ($$). See https://perldoc.perl.org/functions/sort.
+
+EXAMPLES
+
+    # Sort descending alphabetically
+    hatx($aref)->sort(sub ($$) { $_[1] cmp $_[0] });
+
+    # Sort ascending numerically
+    hatx($aref)->sort(sub ($$) { $_[0] <=> $_[1] });
+
+    # Sort descending numerically
+    hatx($aref)->sort(sub ($$) { $_[1] <=> $_[0] });
+
 ## to\_href
 
 Convert internal aref to href using the given function.
 
     $fn->($val) -> ($key, $val)
     $fn is a FUNCTIONREF that takes a single value and returns two values
+
+## to\_aref( $fn \[,@args\] )
+
+DESCRIPTION
+
+    Convert internal hashref to an arrayref.
+
+ARGUMENTS
+
+    $fn - A user-provided function reference with signature:
+
+      $fn->($hkey, $hval [,@args]) return ($val)
+
+      WHERE
+        $hkey   Key of source hashref pair
+        $hval   Value of source hashref pair
+        @args   Optional user variables
+        $val    An element of the target arrayref
+
+    @args - Optional arguments that are passed through to $fn
 
 ## apply
 

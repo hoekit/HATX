@@ -7,3 +7,6 @@ Revision history for HATX
 0.0.2   29 Jun 2024
         Modify map() to accept user-provided @args
 
+0.0.3   29 Jun 2024
+        Add sort(), to_aref()
+

@@ -5,7 +5,7 @@ use Exporter 'import';
 use Carp;
 use Clone qw/clone/;
 
-our $VERSION = '0.0.2';
+our $VERSION = '0.0.3';
 our @EXPORT_OK = qw/hatx/;
 
 =head1 NAME
